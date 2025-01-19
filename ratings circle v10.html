@@ -1,0 +1,260 @@
+<!-- 
+
+Right at the bottom show me all the submitted entries list. Also have an X to delete these from the list too.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rating System with Review, Hover, and Entries List</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .rating-system, .review-section, .entries-list {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rating-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .rating-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .rating-circle.selected-E { background-color: orange; }
+        .rating-circle.selected-D { background-color: yellow; }
+        .rating-circle.selected-C { background-color: lightgreen; }
+        .rating-circle.selected-B { background-color: green; }
+        .rating-circle.selected-A { background-color: darkgreen; color: white; }
+
+        .emoji {
+            font-size: 40px;
+        }
+
+        #titleInput, #reviewText {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #reviewText {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .entry {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="rating-system">
+        <div class="rating-row">
+            <div class="rating-container">
+                <div class="rating-circle" data-rating="E">E</div>
+                <div class="rating-circle" data-rating="D">D</div>
+                <div class="rating-circle" data-rating="C">C</div>
+                <div class="rating-circle" data-rating="B">B</div>
+                <div class="rating-circle" data-rating="A">A</div>
+            </div>
+            <div class="emoji" id="emoji">😐</div>
+        </div>
+        <input type="text" id="titleInput" placeholder="Enter title of item being rated">
+    </div>
+
+    <div class="review-section">
+        <div class="button-row">
+            <button id="writeReviewBtn">Write Review</button>
+            <button id="quickSubmitBtn">Quick Submit</button>
+        </div>
+        <textarea id="reviewText" class="hidden" placeholder="Write your review here..."></textarea>
+        <button id="submitReviewBtn" class="hidden">Submit Review</button>
+    </div>
+
+    <div class="entries-list">
+        <h2>Submitted Entries</h2>
+        <div id="entriesList"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const ratingCircles = document.querySelectorAll('.rating-circle');
+            const emojiElement = document.getElementById('emoji');
+            const writeReviewBtn = document.getElementById('writeReviewBtn');
+            const quickSubmitBtn = document.getElementById('quickSubmitBtn');
+            const reviewText = document.getElementById('reviewText');
+            const submitReviewBtn = document.getElementById('submitReviewBtn');
+            const titleInput = document.getElementById('titleInput');
+            const ratingContainer = document.querySelector('.rating-container');
+            const entriesList = document.getElementById('entriesList');
+
+            const emojis = {
+                'E': '😢', 'D': '😕', 'C': '😐', 'B': '🙂', 'A': '😄'
+            };
+
+            let currentRating = 'C';  // Default rating
+            let entries = [];
+
+            ratingCircles.forEach(circle => {
+                circle.addEventListener('mouseover', () => {
+                    const rating = circle.getAttribute('data-rating');
+                    updateRating(rating);
+                    updateEmoji(rating);
+                });
+
+                circle.addEventListener('click', () => {
+                    const rating = circle.getAttribute('data-rating');
+                    currentRating = rating;
+                    updateRating(rating);
+                    updateEmoji(rating);
+                });
+            });
+
+            ratingContainer.addEventListener('mouseleave', () => {
+                updateRating(currentRating);
+                updateEmoji(currentRating);
+            });
+
+            writeReviewBtn.addEventListener('click', () => {
+                reviewText.classList.remove('hidden');
+                submitReviewBtn.classList.remove('hidden');
+                writeReviewBtn.classList.add('hidden');
+                quickSubmitBtn.classList.add('hidden');
+            });
+
+            quickSubmitBtn.addEventListener('click', () => {
+                submitEntry(false);
+            });
+
+            submitReviewBtn.addEventListener('click', () => {
+                submitEntry(true);
+            });
+
+            function submitEntry(withReview) {
+                const entry = {
+                    title: titleInput.value,
+                    rating: currentRating,
+                    emoji: emojis[currentRating],
+                    review: withReview ? reviewText.value : ''
+                };
+                entries.push(entry);
+                updateEntriesList();
+                resetForm();
+                alert(`Thank you for your ${withReview ? 'detailed review' : 'rating'} of "${entry.title}"!`);
+            }
+
+            function resetForm() {
+                titleInput.value = '';
+                reviewText.value = '';
+                reviewText.classList.add('hidden');
+                submitReviewBtn.classList.add('hidden');
+                writeReviewBtn.classList.remove('hidden');
+                quickSubmitBtn.classList.remove('hidden');
+                currentRating = 'C';
+                updateRating(currentRating);
+                updateEmoji(currentRating);
+            }
+
+            function updateEntriesList() {
+                entriesList.innerHTML = '';
+                entries.forEach((entry, index) => {
+                    const entryElement = document.createElement('div');
+                    entryElement.classList.add('entry');
+                    entryElement.innerHTML = `
+                        <strong>${entry.title}</strong> - ${entry.rating} ${entry.emoji}
+                        ${entry.review ? `<p>${entry.review}</p>` : ''}
+                        <button class="delete-btn" data-index="${index}">X</button>
+                    `;
+                    entriesList.appendChild(entryElement);
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const index = e.target.getAttribute('data-index');
+                        entries.splice(index, 1);
+                        updateEntriesList();
+                    });
+                });
+            }
+
+            function updateRating(selectedRating) {
+                ratingCircles.forEach(circle => {
+                    const rating = circle.getAttribute('data-rating');
+                    circle.classList.remove('selected-E', 'selected-D', 'selected-C', 'selected-B', 'selected-A');
+                    if (rating === selectedRating) {
+                        circle.classList.add(`selected-${rating}`);
+                    }
+                });
+            }
+
+            function updateEmoji(rating) {
+                emojiElement.textContent = emojis[rating];
+            }
+        });
+    </script>
+</body>
+</html>
